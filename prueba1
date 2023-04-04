@@ -1,0 +1,351 @@
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestClassifier
+
+
+import numpy as np
+import tkinter as tk
+import os
+import random
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import models
+from tensorflow.keras import layers
+
+
+contador_numeros = 0
+numeros_ruleta = []
+numeros_ingresados = []
+
+def agregar_numero(event=None, numero=None):
+    global contador_numeros
+    if numero is None:
+        numero = entry.get()
+    if not str(numero).isdigit() or not (0 <= int(numero) <= 36):
+        entry.delete(0, tk.END)
+        return
+    numero = int(numero)
+    color = 'red' if numero in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36] else 'black'
+    numero_label = tk.Label(historico_frame, text=str(numero), fg=color, padx=0, font=("Arial", 8))
+    
+    if contador_numeros % 30 > 0:  # Si hay al menos un número en la línea actual
+        coma_label = tk.Label(historico_frame, text=",", fg='black', padx=0, font=("Arial", 8))
+        coma_label.grid(row=contador_numeros // 30, column=(contador_numeros % 30) * 2 - 1)
+    
+    numero_label.grid(row=contador_numeros // 30, column=(contador_numeros % 30) * 2)
+    entry.delete(0, tk.END)
+    numeros_ingresados.append(numero)
+    contador_numeros += 1
+    contador_label.config(text="Números ingresados: {}".format(contador_numeros))
+    if contador_numeros >= 18:
+        mostrar_prediccion()
+        mostrar_prediccion2()
+        mostrar_prediccion3()
+        mostrar_prediccion4()
+        mostrar_prediccion5()
+        mostrar_prediccion6()
+        mostrar_prediccion7()
+        mostrar_prediccion8()
+        mostrar_prediccion9()
+        
+def mostrar_prediccion():
+    numeros_rojos = [numero for numero in numeros_ingresados if numero in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]]
+    porcentaje_rojos = len(numeros_rojos) / len(numeros_ingresados)
+    porcentaje_negros = 1 - porcentaje_rojos
+    if porcentaje_rojos > porcentaje_negros:
+        prediccion = "La predicción es ROJO"
+    elif porcentaje_negros > porcentaje_rojos:
+        prediccion = "La predicción es NEGRO"
+    else:
+        prediccion = "La predicción es INDETERMINADA"
+    prediccion_label.config(text=prediccion)
+
+def mostrar_prediccion2():
+    prediccion2 = random.choice(["La Predicción 2 aleatoria es ROJO", "La Predicción 2 aleatoria es NEGRO"])
+    prediccion2_label.config(text=prediccion2)
+
+if contador_numeros >= 20:
+    mostrar_prediccion9()
+
+
+
+
+def exportar_numeros():
+    ruta_archivo = os.path.join(r"C:\proyectorul\numeros", "historico_numeros.txt")
+    with open(ruta_archivo, "w") as archivo:
+        numeros = [str(num) for num in numeros_ingresados]
+        archivo.write(",".join(numeros))
+
+def mostrar_prediccion3():
+    ultimos_numeros = numeros_ingresados[-8:]
+    rojos = [num for num in ultimos_numeros if num in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]]
+    negros = [num for num in ultimos_numeros if num not in rojos and num != 0]
+    if len(rojos) > len(negros):
+        prediccion3 = "La Predicción 3 por mayoría reciente es ROJO"
+    elif len(negros) > len(rojos):
+        prediccion3 = "La Predicción 3 por mayoría reciente es NEGRO"
+    else:
+        prediccion3 = "La Predicción 3 por mayoría reciente es INDETERMINADA"
+    prediccion3_label.config(text=prediccion3)
+
+def mostrar_prediccion4():
+    ultimos_numeros = numeros_ingresados[-10:]
+    repeticiones = {num: ultimos_numeros.count(num) for num in ultimos_numeros}
+    numero_repetido = max(repeticiones, key=repeticiones.get)
+    
+    if repeticiones[numero_repetido] > 1:
+        if numero_repetido in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]:
+            prediccion4 = "Predicción 4 repetición: ROJO"
+        elif numero_repetido == 0:
+            prediccion4 = "Predicción 4 repetición: VERDE"
+        else:
+            prediccion4 = "Predicción 4 repetición: NEGRO"
+    else:
+        prediccion4 = "Predicción 4 repetición: INDETERMINADA"
+
+    prediccion4_label.config(text=prediccion4)
+
+def mostrar_prediccion5():
+    ultimos_numeros = numeros_ingresados[-6:]
+    rojos = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+    colores = ['R' if num in rojos else 'N' for num in ultimos_numeros if num != 0]
+    
+    alternancia = True
+    for i in range(len(colores) - 1):
+        if colores[i] == colores[i + 1]:
+            alternancia = False
+            break
+    
+    if alternancia:
+        if colores[-1] == 'R':
+            prediccion5 = "Predicción 5 alternancia: NEGRO"
+        else:
+            prediccion5 = "Predicción 5 alternancia: ROJO"
+    else:
+        prediccion5 = "Predicción 5 alternancia: INDETERMINADA"
+
+    prediccion5_label.config(text=prediccion5)
+
+def mostrar_prediccion6():
+    ultimos_numeros = numeros_ingresados[-10:]
+    if len(ultimos_numeros) >= 3:
+        secuencia_fibonacci = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+        for i in range(2, len(ultimos_numeros)):
+            if ultimos_numeros[i] != ultimos_numeros[i - 1] + ultimos_numeros[i - 2]:
+                break
+        else:
+            prediccion6 = "Predicción 6: ROJO"
+            prediccion6_label.config(fg='red')
+            return
+    prediccion6 = "Predicción 6: NEGRO"
+    prediccion6_label.config(fg='black')
+    prediccion6_label.config(text=prediccion6)
+
+    from sklearn.linear_model import LinearRegression
+
+def mostrar_prediccion7():
+    if contador_numeros < 50:
+        return
+    x = [[i] for i in range(len(numeros_ingresados))]
+    y = numeros_ingresados
+    model = LinearRegression().fit(x, y)
+    pendiente = model.coef_[0]
+    if pendiente > 0:
+        prediccion7 = "Predicción 7: ROJO"
+        prediccion7_label.config(fg='red')
+    elif pendiente < 0:
+        prediccion7 = "Predicción 7: NEGRO"
+        prediccion7_label.config(fg='black')
+    else:
+        prediccion7 = "Predicción 7: INDETERMINADA"
+        prediccion7_label.config(fg='gray')
+    prediccion7_label.config(text=prediccion7)
+
+def crear_conjuntos_entrenamiento_prueba(data, ventana):
+    X, y = [], []
+    for i in range(len(data) - ventana):
+        X.append(data[i:i+ventana])
+        y.append(data[i+ventana])
+    X_train = X[:int(len(X) * 0.8)]
+    y_train = y[:int(len(y) * 0.8)]
+    X_test = X[int(len(X) * 0.8):]
+    y_test = y[int(len(y) * 0.8):]
+    return X_train, y_train, X_test, y_test
+
+def mostrar_prediccion8():
+    if len(numeros_ingresados) < 20:
+        return
+    
+    ventana = 10
+    X_train, y_train, X_test, y_test = crear_conjuntos_entrenamiento_prueba(numeros_ingresados, ventana)
+    
+    model = RandomForestClassifier(random_state=0)
+    model.fit(X_train, y_train)
+    
+    ultimos_numeros = numeros_ingresados[-ventana:]
+    prediccion = model.predict([ultimos_numeros])[0]
+
+    if prediccion in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]:
+        prediccion8 = "Predicción 8 (Random Forest): ROJO"
+    else:
+        prediccion8 = "Predicción 8 (Random Forest): NEGRO"
+    
+    prediccion8_label.config(text=prediccion8)
+
+    import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Attention
+
+def crear_modelo_seq2seq(input_dim, output_dim, hidden_dim):
+    encoder_inputs = Input(shape=(None, input_dim))
+    encoder = LSTM(hidden_dim, return_state=True)
+    encoder_outputs, state_h, state_c = encoder(encoder_inputs)
+    encoder_states = [state_h, state_c]
+    decoder_inputs = Input(shape=(None, output_dim))
+    decoder_lstm = LSTM(hidden_dim, return_sequences=False, return_state=True)
+    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
+    decoder_dense = Dense(output_dim, activation='softmax')
+    decoder_outputs = decoder_dense(decoder_outputs)
+    model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+    return model
+
+def entrenar_modelo_seq2seq(model, X_train, y_train, X_test, y_test, batch_size=64, epochs=100):
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    history = model.fit([X_train, y_train], y_train, batch_size=batch_size, epochs=epochs, validation_data=([X_test, y_test], y_test))
+    return history
+
+def one_hot_encode_sequence(sequence, num_classes):
+    encoded_sequence = np.zeros((len(sequence), num_classes))
+    for i, value in enumerate(sequence):
+        encoded_sequence[i, value] = 1
+    return encoded_sequence
+
+def crear_conjuntos_entrenamiento_prueba_seq2seq(data, ventana, num_classes):
+    X, y = [], []
+    data_one_hot = one_hot_encode_sequence(data, num_classes)
+    for i in range(len(data) - ventana):
+        X.append(data_one_hot[i:i+ventana])
+        y.append(data_one_hot[i+ventana])
+    X = np.array(X)
+    y = np.array(y)
+    X_train = X[:int(len(X) * 0.8)]
+    y_train = y[:int(len(y) * 0.8)]
+    X_test = X[int(len(X) * 0.8):]
+    y_test = y[int(len(y) * 0.8):]
+    return X_train, y_train, X_test, y_test
+
+def mostrar_prediccion9():
+    if len(numeros_ruleta) < 20:
+        print("Se requieren al menos 20 números de ruleta previos para realizar esta predicción.")
+        return
+
+    # Parámetros del modelo
+    ventana = 10
+    num_classes = 37  # 0-36 para la ruleta europea
+
+    # Preparar los datos
+    X_train, y_train, X_test, y_test = crear_conjuntos_entrenamiento_prueba_seq2seq(numeros_ruleta, ventana, num_classes)
+
+    # Crear y entrenar el modelo
+    model = crear_modelo_seq2seq(input_dim=num_classes, output_dim=num_classes, hidden_dim=128)
+    history = entrenar_modelo_seq2seq(model, X_train, y_train, X_test, y_test, batch_size=64, epochs=100)
+
+    # Realizar la predicción
+    ultimo_input = np.array([one_hot_encode_sequence(numeros_ruleta[-ventana:], num_classes)])
+    next_number_probs = model.predict([ultimo_input, np.zeros((1, 1, num_classes))])[0]
+    next_number_prediction = np.argmax(next_number_probs)
+
+    print("Predicción 9 (modelo Seq2Seq con atención):", next_number_prediction)
+    prediccion9_label.config(text="Predicción 9 (modelo Seq2Seq con atención): {}".format(next_number_prediction))
+
+
+def importar_numeros():
+    global contador_numeros, numeros_ingresados
+    ruta_archivo = os.path.join(r"C:\proyectorul\numeros", "historico_numeros.txt")
+    with open(ruta_archivo, "r") as archivo:
+        contenido = archivo.read().split(',')
+        for numero in contenido:
+            agregar_numero(event=True, numero=str(numero))
+    numeros_ingresados = [int(numero) for numero in contenido]
+    contador_numeros = len(contenido)
+    contador_label.config(text="Números ingresados: {}".format(contador_numeros))
+    if contador_numeros >= 18:
+        mostrar_prediccion()
+        mostrar_prediccion2()
+    if contador_numeros >= 20:
+        mostrar_prediccion9()
+
+
+
+def deshacer():
+    global contador_numeros
+    if numeros_ingresados:
+        numeros_ingresados.pop()
+        contador_numeros -= 1
+        contador_label.config(text="Números ingresados: {}".format(contador_numeros))
+        for widget in historico_frame.winfo_children():
+            widget.destroy()
+        for idx, numero in enumerate(numeros_ingresados):
+            color = 'red' if numero in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36] else 'black'
+            numero_label = tk.Label(historico_frame, text=str(numero), fg=color, padx=0, font=("Arial", 8))
+            if idx % 30 > 0:
+                coma_label = tk.Label(historico_frame, text=",", fg='black', padx=0, font=("Arial", 8))
+                coma_label.grid(row=idx // 30, column=(idx % 30) * 2 - 1)
+            numero_label.grid(row=idx // 30, column=(idx % 30) * 2)
+        if contador_numeros == 18:
+            mostrar_prediccion()
+            mostrar_prediccion2()
+        else:
+            prediccion_label.config(text="")
+            prediccion2_label.config(text="")
+
+ventana = tk.Tk()
+ventana.title("Numeritos")
+
+entry = tk.Entry(ventana)
+entry.grid(row=0, column=0)
+entry.bind('<Return>', agregar_numero)
+
+boton_agregar = tk.Button(ventana, text="Agregar número", command=agregar_numero)
+boton_agregar.grid(row=0, column=1)
+
+boton_deshacer = tk.Button(ventana, text="Deshacer", command=deshacer)
+boton_deshacer.grid(row=0, column=2)
+
+boton_exportar = tk.Button(ventana, text="Exportar", command=exportar_numeros)
+boton_exportar.grid(row=0, column=3)
+
+boton_importar = tk.Button(ventana, text="Importar", command=importar_numeros)
+boton_importar.grid(row=0, column=4)
+
+historico_frame = tk.Frame(ventana)
+historico_frame.grid(row=1, column=0, columnspan=5)
+
+contador_label = tk.Label(ventana, text="Números ingresados: 0")
+contador_label.grid(row=2, column=0, columnspan=5)
+
+prediccion_label = tk.Label(ventana, text="")
+prediccion_label.grid(row=3, column=0, columnspan=5)
+
+prediccion2_label = tk.Label(ventana, text="")
+prediccion2_label.grid(row=4, column=0, columnspan=5)
+prediccion3_label = tk.Label(ventana, text="")
+prediccion3_label.grid(row=5, column=0, columnspan=5)
+prediccion4_label = tk.Label(ventana, text="")
+prediccion4_label.grid(row=6, column=0, columnspan=5)
+prediccion5_label = tk.Label(ventana, text="")
+prediccion5_label.grid(row=7, column=0, columnspan=5)
+prediccion6_label = tk.Label(ventana, text="")
+prediccion6_label.grid(row=8, column=0, columnspan=5)
+prediccion7_label = tk.Label(ventana, text="")
+prediccion7_label.grid(row=9, column=0, columnspan=5)
+prediccion8_label = tk.Label(ventana, text="")
+prediccion8_label.grid(row=10, column=0, columnspan=5)
+prediccion9_label = tk.Label(ventana, text="")
+prediccion9_label.grid(row=11, column=0, columnspan=5)
+
+
+
+
+ventana.mainloop()
